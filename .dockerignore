@@ -1,0 +1,10 @@
+.git
+.github
+.agents
+.codex
+.aws
+target
+result
+public
+*.log
+.DS_Store
