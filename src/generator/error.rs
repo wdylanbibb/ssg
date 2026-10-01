@@ -31,6 +31,12 @@ pub enum BuildError {
 
     #[error("failed copying assets")]
     Assets(#[from] AssetError),
+
+    #[error("failed staging site")]
+    Staging(#[from] StagingError),
+
+    #[error("failed planning file generation")]
+    Plan(#[from] PlanError),
 }
 
 #[derive(Debug, Error)]
@@ -149,4 +155,27 @@ pub enum AssetError {
 
     #[error("unsupported asset type at {path}")]
     UnsupportedFileType { path: PathBuf },
+}
+
+#[derive(Debug, Error)]
+pub enum StagingError {
+    #[error("failed to publish site")]
+    Publish(#[from] std::io::Error),
+
+    #[error("failed to create staging directory")]
+    CreateStagingDirectory {
+        path: PathBuf,
+        #[source]
+        source: std::io::Error,
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum PlanError {
+    #[error("output collision at {destination}: {existing_source:?} conflicts with {incoming_source}")]
+    Collision {
+        destination: PathBuf,
+        existing_source: Option<PathBuf>,
+        incoming_source: PathBuf,
+    },
 }
