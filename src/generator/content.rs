@@ -1,15 +1,13 @@
 use std::{fs, path::Path};
 
+use super::{
+    error::ContentError, front_matter::parse_document, plan::PlannedPage, site::SiteConfig,
+};
 use minijinja::{AutoEscape, Environment, path_loader};
 use pulldown_cmark::{Parser, html};
-use walkdir::WalkDir;
-
-use super::{
-    error::ContentError, front_matter::parse_document, output::page_output_path, site::SiteConfig,
-};
 
 pub(super) fn build_content(
-    content: &Path,
+    pages: &[PlannedPage],
     templates: &Path,
     output: &Path,
     site: &SiteConfig,
@@ -17,17 +15,9 @@ pub(super) fn build_content(
     let templates = create_template_environment(templates);
     let mut pages_written = 0;
 
-    for entry in WalkDir::new(content) {
-        let entry = entry?;
-        let source_path = entry.path();
-
-        if !is_markdown_file(source_path) {
-            continue;
-        }
-
-        let rendered = render_page(source_path, &templates, site)?;
-        let relative_output = page_output_path(content, source_path)?;
-        write_page(output, &relative_output, &rendered)?;
+    for page in pages {
+        let rendered = render_page(&page.source, &templates, site)?;
+        write_page(output, &page.destination, &rendered)?;
 
         pages_written += 1;
     }
@@ -48,10 +38,6 @@ fn create_template_environment(templates: &Path) -> Environment<'static> {
     });
 
     environment
-}
-
-fn is_markdown_file(path: &Path) -> bool {
-    path.is_file() && path.extension().and_then(|extension| extension.to_str()) == Some("md")
 }
 
 fn render_page(

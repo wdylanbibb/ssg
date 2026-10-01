@@ -13,10 +13,9 @@ use asset::copy_assets;
 use content::build_content;
 pub use error::{AssetError, BuildError, ConfigError, ContentError, FrontMatterError};
 use output::{StagedOutput, prepare_output};
+use plan::BuildPlan;
 use site::load_site_config;
 use source::validate_source;
-use plan::BuildPlan;
-
 
 pub fn build_site(source: &Path, output: &Path) -> Result<BuildReport, BuildError> {
     let source_paths = validate_source(source)?;
@@ -27,9 +26,14 @@ pub fn build_site(source: &Path, output: &Path) -> Result<BuildReport, BuildErro
     let staged_output = StagedOutput::new(output)?;
     let output_paths = prepare_output(staged_output.path())?;
 
-    let pages_written = build_content(&plan.pages, &source_paths.templates, &output_paths.root, &site)?;
+    let pages_written = build_content(
+        &plan.pages,
+        &source_paths.templates,
+        &output_paths.root,
+        &site,
+    )?;
 
-    let assets_copied = copy_assets(&plan.assets, &output_paths.assets)?;
+    let assets_copied = copy_assets(&plan.assets, &output_paths.root)?;
 
     staged_output.publish()?;
 

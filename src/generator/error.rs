@@ -167,12 +167,26 @@ pub enum StagingError {
         path: PathBuf,
         #[source]
         source: std::io::Error,
-    }
+    },
 }
 
 #[derive(Debug, Error)]
 pub enum PlanError {
-    #[error("output collision at {destination}: {existing_source:?} conflicts with {incoming_source}")]
+    #[error("failed to traverse a source directory")]
+    WalkDir(#[from] walkdir::Error),
+
+    #[error(transparent)]
+    Content(#[from] ContentError),
+
+    #[error("asset {path} is outside the asset directory {assets_root}")]
+    OutsideAssetsDirectory { path: PathBuf, assets_root: PathBuf },
+
+    #[error("unsupported asset type at {path}")]
+    UnsupportedAssetType { path: PathBuf },
+
+    #[error(
+        "output collision at {destination}: {existing_source:?} conflicts with {incoming_source}"
+    )]
     Collision {
         destination: PathBuf,
         existing_source: Option<PathBuf>,
