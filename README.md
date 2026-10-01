@@ -55,4 +55,8 @@ The `assets` directory should include any file that is referenced by the templat
 
 ## Serving the site
 
-To generate and serve a site from the source directory, use the `ssg serve` command. It takes the same arguments as the `build` sub command, but must also include the `--address` argument. It takes any address and port and attempts to generate the site and serve it at that address and port.
+To serve a site from a generated site, use the `ssg serve` command. It takes the `root` argument, which should point to a folder containing valid HTML files, as well as the `address` argument, which takes any address and serves the `root` site on it.
+
+### Preview subcommand
+
+The `ssg preview` subcommand takes the `source`, `output`, and `address` arguments and builds then serves the given `source` site at `address`.
