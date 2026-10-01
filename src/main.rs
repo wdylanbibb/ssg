@@ -1,9 +1,4 @@
-use std::{
-    error::Error,
-    net::SocketAddr,
-    path::PathBuf,
-    process::ExitCode,
-};
+use std::{error::Error, net::SocketAddr, path::PathBuf, process::ExitCode};
 
 use clap::Parser;
 use thiserror::Error;
@@ -114,18 +109,13 @@ async fn serve(
     address: Option<SocketAddr>,
 ) -> Result<(), ServeError> {
     let output = build(source, output)?;
-    let address = address.unwrap_or_else(|| {
-        SocketAddr::from(([0, 0, 0, 0], 8080))
-    });
+    let address = address.unwrap_or_else(|| SocketAddr::from(([0, 0, 0, 0], 8080)));
 
     let listener = tokio::net::TcpListener::bind(address)
         .await
         .map_err(|source| ServeError::Bind { address, source })?;
 
-    let app = axum::Router::new()
-        .fallback_service(tower_http::services::ServeDir::new(output));
+    let app = axum::Router::new().fallback_service(tower_http::services::ServeDir::new(output));
 
-    axum::serve(listener, app)
-        .await
-        .map_err(ServeError::Server)
+    axum::serve(listener, app).await.map_err(ServeError::Server)
 }

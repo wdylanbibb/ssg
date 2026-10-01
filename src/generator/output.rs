@@ -34,8 +34,9 @@ impl StagedOutput {
                 ),
             })?;
 
-        std::fs::create_dir_all(parent).map_err(|source| {
-            StagingError::CreateStagingDirectory { path: parent.to_path_buf(), source }
+        std::fs::create_dir_all(parent).map_err(|source| StagingError::CreateStagingDirectory {
+            path: parent.to_path_buf(),
+            source,
         })?;
 
         let mut prefix = OsString::from(".");
@@ -45,7 +46,10 @@ impl StagedOutput {
         let staging = Builder::new()
             .prefix(&prefix)
             .tempdir_in(parent)
-            .map_err(|source| StagingError::CreateStagingDirectory { path: parent.to_path_buf(), source })?;
+            .map_err(|source| StagingError::CreateStagingDirectory {
+                path: parent.to_path_buf(),
+                source,
+            })?;
 
         Ok(Self {
             destination: output.to_path_buf(),
