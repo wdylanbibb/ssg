@@ -4,7 +4,7 @@ use super::{
     error::ContentError, front_matter::parse_document, plan::PlannedPage, site::SiteConfig,
 };
 use minijinja::{AutoEscape, Environment, path_loader};
-use pulldown_cmark::{Parser, html};
+use pulldown_cmark::{CowStr, Event, LinkType, Options, Parser, Tag, html};
 
 pub(super) fn build_content(
     pages: &[PlannedPage],
@@ -83,11 +83,55 @@ fn render_page(
 }
 
 fn render_markdown(markdown: &str) -> String {
-    let parser = Parser::new(markdown);
-    let mut html = String::new();
+    let options = Options::ENABLE_WIKILINKS | Options::ENABLE_HEADING_ATTRIBUTES;
+    let parser = Parser::new_ext(markdown, options).map(|event| match event {
+        Event::Start(Tag::Link {
+            link_type: LinkType::WikiLink { has_pothole },
+            dest_url,
+            title,
+            id,
+        }) => {
+            let dest_url = normalize_wikilink(&dest_url);
 
-    html::push_html(&mut html, parser);
-    html
+            Event::Start(Tag::Link {
+                link_type: LinkType::WikiLink { has_pothole },
+                dest_url,
+                title,
+                id,
+            })
+        }
+
+        event => event,
+    });
+
+    let mut output = String::new();
+    html::push_html(&mut output, parser);
+    output
+}
+
+fn normalize_wikilink(target: &str) -> CowStr<'static> {
+    let (page, heading) = target.split_once('#').unwrap_or((target, ""));
+    let page = page.strip_suffix(".md").unwrap_or(page);
+
+    let mut url = if page.is_empty() {
+        String::new()
+    } else {
+        format!("/{}/", page.trim_matches('/'))
+    };
+
+    if !heading.is_empty() {
+        url.push('#');
+        url.push_str(&slugify_heading(heading));
+    }
+
+    url.into()
+}
+
+fn slugify_heading(heading: &str) -> String {
+    heading
+        .trim()
+        .to_lowercase()
+        .replace(' ', "-")
 }
 
 fn write_page(output: &Path, relative_path: &Path, html: &str) -> Result<(), ContentError> {
